@@ -83,8 +83,7 @@ namespace ImageSeriesRecorder
             KeyboardShortcut = new SavedKeyboardShortcut("Open recorder window", this, new KeyboardShortcut(KeyCode.R, KeyCode.LeftShift));
 
             _windowRect = new Rect(200, 200, 350, 200);
-
-            StopCapture();
+            _lastMessage = "Standing by...";
         }
 
         private void StartCapture()
@@ -110,7 +109,7 @@ namespace ImageSeriesRecorder
 
             Utils.Sound.Play(SystemSE.ok_l);
 
-            _lastMessage = "Standing by...";
+            _lastMessage = "Finished saving images to " + _captureDirectory;
         }
 
         private void Update()
