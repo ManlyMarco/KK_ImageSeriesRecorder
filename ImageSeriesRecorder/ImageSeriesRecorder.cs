@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.IO;
 using alphaShot;
 using BepInEx;
@@ -37,6 +38,7 @@ namespace ImageSeriesRecorder
         private int FrameCountToRecord => _secondsToRecord.Value * _frameRate.Value;
         private int _frameCounter;
         private bool _skipping;
+        private bool _gatheringFps;
 
         private float _deltaTime;
         private float _minFps;
@@ -83,21 +85,35 @@ namespace ImageSeriesRecorder
             KeyboardShortcut = new SavedKeyboardShortcut("Open recorder window", this, new KeyboardShortcut(KeyCode.R, KeyCode.LeftShift));
 
             _windowRect = new Rect(200, 200, 350, 200);
-            _lastMessage = "Standing by...";
+            _lastMessage = "Ready";
         }
 
         private void StartCapture()
         {
+            _lastMessage = "Preparing to start...";
+
             _screenGrabber = GetSceenshotHandler();
 
             // Need to limit fps to the framerate to match recording speed
             _originalFramerate = Application.targetFrameRate;
             _originalVsync = QualitySettings.vSyncCount;
-            Application.targetFrameRate = _frameRate.Value;
             QualitySettings.vSyncCount = 0;
             _frameCounter = 0;
             _skipping = true;
-            _skipFrames = (int)(_frameRate.Value / _minFps) + 2;
+
+            _gatheringFps = true;
+            Application.targetFrameRate = 0;
+            StartCoroutine(GetherFpsCo());
+        }
+
+        private IEnumerator GetherFpsCo()
+        {
+            yield return new WaitForSeconds(3);
+
+            Application.targetFrameRate = _frameRate.Value;
+
+            _skipFrames = (int)(_frameRate.Value / _minFps) + 1;
+            _gatheringFps = false;
         }
 
         private void StopCapture()
@@ -109,7 +125,7 @@ namespace ImageSeriesRecorder
 
             Utils.Sound.Play(SystemSE.ok_l);
 
-            _lastMessage = "Finished saving images to " + _captureDirectory;
+            _lastMessage = "Finished saving images to " + _captureDirectory.Value;
         }
 
         private void Update()
@@ -130,7 +146,13 @@ namespace ImageSeriesRecorder
 
             if (DisplayingWindow)
             {
-                if (IsCaptureRunning())
+                if (_gatheringFps)
+                {
+                    _deltaTime += (Time.unscaledDeltaTime - _deltaTime) * 0.1f;
+                    float fps = 1.0f / _deltaTime;
+                    if (fps < _minFps) _minFps = fps;
+                }
+                else if (IsCaptureRunning())
                 {
                     if (Input.GetKey(KeyCode.LeftShift))
                     {
@@ -143,6 +165,8 @@ namespace ImageSeriesRecorder
                         // Only 0 stops fixedupdate
                         Time.timeScale = 0;
 
+                        _lastMessage = $"Capturing frame {_frameCounter} / {FrameCountToRecord}";
+                        
                         var result = _screenGrabber.Capture(_resolutionW.Value, _resolutionH.Value, _downscaleRate.Value, _alphaCapture.Value);
 
                         File.WriteAllBytes(Path.Combine(_captureDirectory.Value, $@"{_frameCounter:D5}.png"), result);
@@ -171,12 +195,6 @@ namespace ImageSeriesRecorder
                             }
                         }
                     }
-                }
-                else
-                {
-                    _deltaTime += (Time.unscaledDeltaTime - _deltaTime) * 0.1f;
-                    float fps = 1.0f / _deltaTime;
-                    if (fps < _minFps) _minFps = fps;
                 }
             }
         }
@@ -259,16 +277,16 @@ namespace ImageSeriesRecorder
                 }
                 GUILayout.EndHorizontal();
 
-                GUILayout.Label(_lastMessage, GUILayout.MaxWidth(350));
             }
             else
             {
                 GUILayout.Label("To stop capturing prematurely hold Left Shift. \n\n" +
                                 "Avoid doing anything that could lag the game or the frames might become out of sync!", GUILayout.MaxWidth(350));
                 GUILayout.Space(20);
-                GUILayout.Label($"Capturing frame {_frameCounter} / {FrameCountToRecord}", GUILayout.MaxWidth(350));
             }
-            
+
+            GUILayout.Label(_lastMessage, GUILayout.MaxWidth(350));
+
             GUI.DragWindow();
         }
     }
