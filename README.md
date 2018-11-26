@@ -15,6 +15,8 @@ Download the latest version in [releases](https://github.com/ManlyMarco/KK_Image
 5. Click on the Start recording button and then quickly start your animations.
 6. To convert the created images to a video you can use the [Images to video](http://en.cze.cz/Images-to-video) tool. To convert to an animated GIF or APNG you can use editor like Photoshop or one of the many image to GIF converters.
 
+This plugin is best used with the VMDPlayer plugin (it allows you to load and play MMD animation files in Koikatu Studio).
+
 ### How is this plugin better than just recording the game window?
 - Images can be of larger resolution than game window and can have arbitrary aspect ratios.
 - Images are compressed to PNG, so no quality is lost.
@@ -22,5 +24,3 @@ Download the latest version in [releases](https://github.com/ManlyMarco/KK_Image
 - Images can be saved with transparent backgrounds for use in game graphics, VN sprites and reaction images.
 - It's possible to save images at arbitrarily high framerates (higher than the max FPS you can run the game at).
 - Interface is not captured, only the 3D scene is.
-
-This plugin is best used with the VMDPlayer plugin (it allows you to load and play MMD animation files in Koikatu Studio).
